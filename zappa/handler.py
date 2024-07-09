@@ -244,8 +244,8 @@ class LambdaHandler:
 
     @classmethod
     def lambda_handler(cls, event, context):  # pragma: no cover
-        remaining_time_in_millis = context.get_remaining_time_in_millis()
-        warning_time_in_seconds = (remaining_time_in_millis / 1000) - 1  # Warning 1 second before timeout
+        remaining_time_in_millis = context.get_remaining_time_in_millis() if context else 23 * 1000
+        warning_time_in_seconds = (remaining_time_in_millis / 1000) - 1
 
         if warning_time_in_seconds > 0:
             signal.signal(signal.SIGALRM, lambda *args: log_stack_trace())
