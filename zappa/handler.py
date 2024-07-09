@@ -244,13 +244,8 @@ class LambdaHandler:
 
     @classmethod
     def lambda_handler(cls, event, context):  # pragma: no cover
-        remaining_time_in_millis = context.get_remaining_time_in_millis() if context else 23 * 1000
-        warning_time_in_seconds = (remaining_time_in_millis / 1000) - 1
-
-        if warning_time_in_seconds > 0:
-            signal.signal(signal.SIGALRM, lambda *args: log_stack_trace())
-            signal.alarm(int(warning_time_in_seconds))
-
+        api_gateway_request_id = event.get("requestContext", {}).get("requestId")
+        logger.info("API Gateway Request ID: {} Started".format(api_gateway_request_id))
         handler = global_handler or cls()
         exception_handler = handler.settings.EXCEPTION_HANDLER
         try:
@@ -266,6 +261,7 @@ class LambdaHandler:
                 # Only re-raise exception if handler directed so. Allows handler to control if lambda has to retry
                 # an event execution in case of failure.
                 raise
+        logger.info("API Gateway Request ID: {} Terminated".format(api_gateway_request_id))
 
     @classmethod
     def _process_exception(cls, exception_handler, event, context, exception):
