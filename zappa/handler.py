@@ -1,4 +1,5 @@
 import base64
+import signal
 import collections
 import datetime
 import importlib
@@ -32,6 +33,11 @@ except ImportError:  # pragma: no cover
 logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+
+def log_stack_trace():
+    stack_trace = ''.join(traceback.format_stack())
+    logger.error(stack_trace)
 
 
 class LambdaHandler:
@@ -238,6 +244,13 @@ class LambdaHandler:
 
     @classmethod
     def lambda_handler(cls, event, context):  # pragma: no cover
+        remaining_time_in_millis = context.get_remaining_time_in_millis()
+        warning_time_in_seconds = (remaining_time_in_millis / 1000) - 1  # Warning 1 second before timeout
+
+        if warning_time_in_seconds > 0:
+            signal.signal(signal.SIGALRM, lambda *args: log_stack_trace())
+            signal.alarm(int(warning_time_in_seconds))
+
         handler = global_handler or cls()
         exception_handler = handler.settings.EXCEPTION_HANDLER
         try:
